@@ -1,34 +1,62 @@
-const form = document.querySelector("form");
-const locationButton = document.querySelector("#sendLocation");
+const $form = document.querySelector("form");
+const $submitBtn = document.querySelector("#msgSubmit");
+const $msgInput = document.querySelector("#msgInput");
+const $locationButton = document.querySelector("#sendLocation");
+const $messages = document.querySelector("#messages");
 
 const socket = io();
 
-form.addEventListener("submit", (e) => {
+$form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const msg = document.querySelector("#msg").value;
+  // disable the button
+  $submitBtn.setAttribute("disabled", "disabled");
+
+  const msg = document.querySelector("#msgInput").value;
+  // enable the button
+  // reset the input textbox
+  // refocus textbox
   socket.emit("sendMessage", msg, (ack) => {
+    $submitBtn.removeAttribute("disabled");
+    $msgInput.value = "";
+    $msgInput.focus();
     if (ack) {
       return console.log(ack);
-      }
-      console.log('message delivered!')
+    }
+    console.log("message delivered!");
   });
 });
 
-locationButton.addEventListener("click", (e) => {
+$locationButton.addEventListener("click", (e) => {
+  // disable the location button
+  e.target.setAttribute("disabled", "disabled");
+
   if (!navigator.geolocation) {
     return alert("Geolocaiton not supported by browser");
   }
   navigator.geolocation.getCurrentPosition((position) => {
     console.log(position);
-    socket.emit("sendLocation", {
-      lat: position.coords.latitude,
-      long: position.coords.longitude,
-    }, () => {
-        console.log(`Location shared!`)
-    });
+    socket.emit(
+      "sendLocation",
+      {
+        lat: position.coords.latitude,
+        long: position.coords.longitude,
+      },
+      () => {
+        e.target.removeAttribute("disabled");
+        console.log(`Location shared!`);
+      }
+    );
   });
 });
 
-socket.on("message", (msg) => {
-  console.log(`${msg}`);
+// Templates
+const messageTemplate = document.querySelector("#message-template").innerHTML;
+
+socket.on("message", (message) => {
+  console.log(`${message}`);
+  const html = Mustache.render(messageTemplate, {
+    message,
+  });
+  console.log(html);
+  $messages.insertAdjacentHTML("beforeend", html);
 });
