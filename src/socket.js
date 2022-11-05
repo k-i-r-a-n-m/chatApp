@@ -1,5 +1,8 @@
 const Filter = require("bad-words");
-const { generateMessage } = require("./utils/messages");
+const {
+  generateMessage,
+  generateLocationMessage,
+} = require("./utils/messages");
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
@@ -22,7 +25,9 @@ module.exports = (io) => {
       console.log("position:" + coords.lat, coords.long);
       io.emit(
         "locationMessage",
-        `https://google.com/maps?q=${coords.lat},${coords.long}`
+        generateLocationMessage(
+          `https://google.com/maps?q=${coords.lat},${coords.long}`
+        )
       );
       callback();
     });
