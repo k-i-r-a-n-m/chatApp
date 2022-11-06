@@ -1,4 +1,12 @@
 const Filter = require("bad-words");
+
+const {
+  addUser,
+  removeUser,
+  getUser,
+  getUsersInRoom,
+} = require("./utils/users");
+
 const {
   generateMessage,
   generateLocationMessage,
@@ -9,13 +17,20 @@ module.exports = (io) => {
     console.log(`client:${socket.id}`);
 
     // room
-    socket.on("join", ({ username, room }) => {
-      socket.join(room);
+    socket.on("join", (userData, callback) => {
+      const { error, user } = addUser({ id: socket.id, ...userData });
+      if (error) {
+        return callback(error);
+      }
 
-      socket.emit("message", generateMessage("Welcome!"));
+      socket.join(user.room);
+
+      socket.emit("message", generateMessage("Admin","Welcome!"));
       socket.broadcast
-        .to(room)
-        .emit("message", generateMessage(`${username} has joined`));
+        .to(user.room)
+        .emit("message", generateMessage(`${user.username} has joined`));
+
+      callback();
     });
 
     socket.on("sendMessage", (msg, callback) => {
@@ -23,15 +38,18 @@ module.exports = (io) => {
       if (filter.isProfane(msg)) {
         return callback(`Profanity is not allowed`);
       }
-      io.emit("message", generateMessage(msg));
+      const user = getUser(socket.id);
+      io.to(user.room).emit("message", generateMessage(user.username,msg));
       callback();
     });
 
     socket.on("sendLocation", (coords, callback) => {
       console.log("position:" + coords.lat, coords.long);
-      io.emit(
+      const user = getUser(socket.id);
+      io.to(user.room).emit(
         "locationMessage",
         generateLocationMessage(
+          user.username,
           `https://google.com/maps?q=${coords.lat},${coords.long}`
         )
       );
@@ -39,7 +57,13 @@ module.exports = (io) => {
     });
 
     socket.on("disconnect", () => {
-      io.emit("message", generateMessage("user left -1"));
+      const user = removeUser(socket.id);
+      if (user) {
+        io.to(user.room).emit(
+          "message",
+          generateMessage(`${user.username} has left`)
+        );
+      }
     });
   });
 };

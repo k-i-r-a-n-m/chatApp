@@ -61,19 +61,27 @@ socket.on("message", (message) => {
   const html = Mustache.render(messageTemplate, {
     message: message.text,
     createdAt: moment(message.createdAt).format("h:m a"),
+    username:message.username
   });
   console.log(html);
   $messages.insertAdjacentHTML("beforeend", html);
 });
 
-socket.on("locationMessage", (location) => {
+socket.on("locationMessage", (message) => {
   const html = Mustache.render(locationTemplate, {
-    url: location.url,
-    createdAt: moment(location.createdAt).format("h:m a"),
+    url: message.url,
+    createdAt: moment(message.createdAt).format("h:m a"),
+    username:message.username
   });
   $messages.insertAdjacentHTML("beforeend", html);
   console.log(location);
 });
  
 
-socket.emit('join',{username,room})
+socket.emit('join', { username, room }, (error) => {
+  if (error) {
+    alert(error)
+    location.href='/'
+  }
+  console.log('joined a room!')
+})
