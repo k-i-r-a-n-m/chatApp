@@ -49,6 +49,9 @@ $locationButton.addEventListener("click", (e) => {
   });
 });
 
+// opitons
+const { username, room } = Qs.parse(location.search,{ignoreQueryPrefix:true})
+
 // Templates
 const messageTemplate = document.querySelector("#message-template").innerHTML;
 const locationTemplate = document.querySelector("#location-template").innerHTML;
@@ -71,3 +74,6 @@ socket.on("locationMessage", (location) => {
   $messages.insertAdjacentHTML("beforeend", html);
   console.log(location);
 });
+ 
+
+socket.emit('join',{username,room})
