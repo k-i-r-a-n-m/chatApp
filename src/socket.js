@@ -25,10 +25,16 @@ module.exports = (io) => {
 
       socket.join(user.room);
 
-      socket.emit("message", generateMessage("Admin","Welcome!"));
+      socket.emit("message", generateMessage("Admin", "Welcome!"));
       socket.broadcast
         .to(user.room)
         .emit("message", generateMessage(`${user.username} has joined`));
+
+      // sending all in a room to the client
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
 
       callback();
     });
@@ -39,7 +45,7 @@ module.exports = (io) => {
         return callback(`Profanity is not allowed`);
       }
       const user = getUser(socket.id);
-      io.to(user.room).emit("message", generateMessage(user.username,msg));
+      io.to(user.room).emit("message", generateMessage(user.username, msg));
       callback();
     });
 
@@ -63,6 +69,11 @@ module.exports = (io) => {
           "message",
           generateMessage(`${user.username} has left`)
         );
+
+        io.to(user.room).emit("roomData", {
+          room: user.room,
+          users: getUsersInRoom(user.room),
+        });
       }
     });
   });
